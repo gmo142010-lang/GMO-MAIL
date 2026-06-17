@@ -1,7 +1,7 @@
 import { r as __toESM } from "../_runtime.mjs";
 import { n as require_jsx_runtime, r as require_react } from "../_libs/react+tanstack__react-query.mjs";
 import { a as RotateCcw, c as Lock, d as Copy, f as Clock, i as ShieldCheck, l as Inbox, m as ArrowLeft, n as Trash2, o as RefreshCw, p as Check, r as Sparkles, s as Mail, t as Zap, u as Globe } from "../_libs/lucide-react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-wlu2-lCB.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-R8wBCnNy.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var BASE = "https://api.mail.tm";
@@ -268,14 +268,37 @@ var translations = {
 	}
 };
 function AdSlot({ label, slotId, variant = "box" }) {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+	const adRef = (0, import_react.useRef)(null);
+	const isLoaded = (0, import_react.useRef)(false);
+	const formats = {
+		banner: "horizontal",
+		box: "rectangle",
+		wide: "horizontal"
+	};
+	(0, import_react.useEffect)(() => {
+		if (isLoaded.current) return;
+		isLoaded.current = true;
+		if (typeof window !== "undefined" && window.adsbygoogle) try {
+			window.adsbygoogle.push({});
+		} catch {}
+	}, []);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		"data-ad-slot": slotId,
-		className: `flex w-full ${{
-			banner: "min-h-[90px]",
-			box: "min-h-[250px]",
-			wide: "min-h-[120px]"
-		}[variant]} items-center justify-center rounded-2xl border border-dashed border-border bg-muted/40 px-4 text-center`,
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex w-full items-center justify-center rounded-2xl border border-dashed border-border bg-muted/40 px-4 text-center",
+		style: { minHeight: variant === "banner" ? 90 : variant === "wide" ? 120 : 250 },
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ins", {
+			ref: adRef,
+			className: "adsbygoogle",
+			style: {
+				display: "block",
+				width: "100%",
+				minHeight: variant === "banner" ? 90 : variant === "wide" ? 120 : 250
+			},
+			"data-ad-client": "ca-pub-9511146548470420",
+			"data-ad-slot": slotId,
+			"data-ad-format": formats[variant],
+			"data-full-width-responsive": "true"
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("noscript", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 			className: "flex flex-col items-center gap-1",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 				className: "text-xs font-semibold uppercase tracking-widest text-muted-foreground/70",
@@ -284,7 +307,7 @@ function AdSlot({ label, slotId, variant = "box" }) {
 				className: "text-[11px] text-muted-foreground/50",
 				children: ["AdSense · ", slotId]
 			})]
-		})
+		}) })]
 	});
 }
 var STORAGE_KEY = "gmo_mail_account";
