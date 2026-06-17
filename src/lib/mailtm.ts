@@ -34,7 +34,9 @@ function randomString(len: number) {
   return out;
 }
 
-async function api(path: string, options: RequestInit = {}, token?: string) {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function api(path: string, options: RequestInit = {}, token?: string, attempt = 0): Promise<any> {
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: {
@@ -44,6 +46,11 @@ async function api(path: string, options: RequestInit = {}, token?: string) {
       ...(options.headers || {}),
     },
   });
+  // mail.tm rate-limits with 429 — back off and retry a few times
+  if (res.status === 429 && attempt < 4) {
+    await sleep(1200 * (attempt + 1));
+    return api(path, options, token, attempt + 1);
+  }
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`mail.tm ${res.status}: ${body}`);
@@ -62,20 +69,25 @@ export async function createAccount(): Promise<MailAccount> {
   const domains = await getDomains();
   if (!domains.length) throw new Error("no-domains");
   const domain = domains[0];
-  const address = `${randomString(10)}@${domain}`;
   const password = randomString(14);
 
-  await api("/accounts", {
-    method: "POST",
-    body: JSON.stringify({ address, password }),
-  });
-
-  const tokenRes = await api("/token", {
-    method: "POST",
-    body: JSON.stringify({ address, password }),
-  });
-
-  return { id: tokenRes.id, address, password, token: tokenRes.token };
+  // retry with a fresh address if one happens to collide
+  let lastErr: unknown;
+  for (let i = 0; i < 3; i++) {
+    const address = `${randomString(10)}@${domain}`;
+    try {
+      await api("/accounts", { method: "POST", body: JSON.stringify({ address, password }) });
+      const tokenRes = await api("/token", {
+        method: "POST",
+        body: JSON.stringify({ address, password }),
+      });
+      return { id: tokenRes.id, address, password, token: tokenRes.token };
+    } catch (e) {
+      lastErr = e;
+      await sleep(600);
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("create-failed");
 }
 
 export async function listMessages(token: string): Promise<MessageSummary[]> {
