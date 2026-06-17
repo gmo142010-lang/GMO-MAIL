@@ -83,16 +83,19 @@ function Index() {
     try {
       const acc = await createAccount();
       setAndStore(acc);
-    } catch {
+    } catch (e) {
+      console.error("createAccount failed", e);
       setError(t.errorCreate);
     } finally {
       setLoading(false);
     }
   }, [setAndStore, t.errorCreate]);
 
-  // bootstrap: reuse stored account or create new
+  // bootstrap: reuse stored account or create new (guarded against double-run)
+  const bootstrapped = useRef(false);
   useEffect(() => {
-    let cancelled = false;
+    if (bootstrapped.current) return;
+    bootstrapped.current = true;
     (async () => {
       const stored =
         typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
@@ -100,21 +103,16 @@ function Index() {
         try {
           const acc = JSON.parse(stored) as MailAccount;
           await listMessages(acc.token);
-          if (!cancelled) {
-            accountRef.current = acc;
-            setAccount(acc);
-            setLoading(false);
-            return;
-          }
+          accountRef.current = acc;
+          setAccount(acc);
+          setLoading(false);
+          return;
         } catch {
           /* stale account, fall through to create */
         }
       }
-      if (!cancelled) await newAccount();
+      await newAccount();
     })();
-    return () => {
-      cancelled = true;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
