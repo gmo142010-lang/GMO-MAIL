@@ -61,8 +61,10 @@ async function api(path: string, options: RequestInit = {}, token?: string, atte
 
 export async function getDomains(): Promise<string[]> {
   const data = await api("/domains?page=1");
-  const list = (data["hydra:member"] || []).filter((d: any) => d.isActive && !d.isPrivate);
-  return list.map((d: any) => d.domain);
+  const members: any[] = data?.["hydra:member"] ?? data?.member ?? (Array.isArray(data) ? data : []);
+  const active = members.filter((d) => d?.isActive !== false && d?.isPrivate !== true);
+  const source = active.length ? active : members;
+  return source.map((d) => d.domain).filter(Boolean);
 }
 
 export async function createAccount(): Promise<MailAccount> {
